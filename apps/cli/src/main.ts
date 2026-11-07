@@ -20,7 +20,7 @@ Usage:
   flux providers            List, add, test, enable, disable or remove profiles
   flux models               List models, choose the default, set per-role overrides
   flux usage                Show token usage and budget status
-  flux sessions             List, show or delete saved sessions
+  flux sessions             List, search, show or delete saved sessions
 
 Common flags:
   --session <id>       Continue an existing session

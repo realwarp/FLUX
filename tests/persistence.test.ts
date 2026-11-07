@@ -29,6 +29,8 @@ describe("SQLite persistence", () => {
     try {
       const session = db.createSession({ cwd: "C:\\work", title: "Demo" });
       expect(db.schemaVersion()).toBe(1);
+      db.createSession({ cwd: "C:\\work", title: "Another session" });
+      expect(db.searchSessions("demo").map((item) => item.id)).toEqual([session.id]);
 
       db.appendMessage({ sessionId: session.id, role: "user", content: "hello", agentId: "agent_1" });
       db.appendMessage({
@@ -52,7 +54,7 @@ describe("SQLite persistence", () => {
       reopened.close();
 
       db.deleteSession(session.id);
-      expect(db.listSessions()).toHaveLength(0);
+      expect(db.listSessions()).toHaveLength(1);
       expect(db.listMessages(session.id)).toHaveLength(0);
     } finally {
       db.close();

@@ -6,10 +6,14 @@ export async function sessionsCommand(argv: string[]): Promise<void> {
   const action = positionals[0] ?? "list";
   const app = await openApp();
   try {
-    if (action === "list") {
-      const sessions = app.listSessions();
+    if (action === "list" || action === "search") {
+      const query = action === "search" ? positionals.slice(1).join(" ").trim() : "";
+      if (action === "search" && !query) {
+        throw new FluxError("config", "Usage: flux sessions search <text>");
+      }
+      const sessions = query ? app.searchSessions(query) : app.listSessions();
       if (sessions.length === 0) {
-        process.stdout.write("No saved sessions.\n");
+        process.stdout.write(query ? `No sessions match ${JSON.stringify(query)}.\n` : "No saved sessions.\n");
         return;
       }
       const rows = [["ID", "UPDATED", "CWD", "TITLE"]];
@@ -41,7 +45,7 @@ export async function sessionsCommand(argv: string[]): Promise<void> {
       return;
     }
 
-    throw new FluxError("config", `Unknown sessions action: ${action}. Try list, show, delete.`);
+    throw new FluxError("config", `Unknown sessions action: ${action}. Try list, search, show, delete.`);
   } finally {
     app.close();
   }

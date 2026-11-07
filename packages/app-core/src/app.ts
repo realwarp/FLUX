@@ -156,6 +156,10 @@ export class FluxApp {
     return this.db.listSessions(limit);
   }
 
+  searchSessions(query: string, limit = 50): SessionRow[] {
+    return this.db.searchSessions(query, limit);
+  }
+
   deleteSession(id: string): void {
     this.db.deleteSession(id);
   }
