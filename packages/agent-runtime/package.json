@@ -1,0 +1,18 @@
+{
+  "name": "@flux/agent-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flux/shared": "workspace:*",
+    "@flux/providers": "workspace:*",
+    "@flux/tools": "workspace:*",
+    "@flux/permissions": "workspace:*",
+    "@flux/repository": "workspace:*",
+    "@flux/persistence": "workspace:*"
+  }
+}

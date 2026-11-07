@@ -1,0 +1,6 @@
+[install]
+# Keep optional native packages (OpenTUI renderer) enabled.
+optional = true
+
+[test]
+root = "."

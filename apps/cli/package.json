@@ -1,0 +1,17 @@
+{
+  "name": "@flux/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "flux": "./src/entry.ts"
+  },
+  "main": "./src/entry.ts",
+  "dependencies": {
+    "@flux/shared": "workspace:*",
+    "@flux/app-core": "workspace:*",
+    "@flux/providers": "workspace:*",
+    "@flux/tui": "workspace:*",
+    "@flux/permissions": "workspace:*"
+  }
+}
