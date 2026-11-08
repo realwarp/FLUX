@@ -7,14 +7,21 @@ OS_NAME="$(uname -s)"
 MACHINE="$(uname -m)"
 
 case "$OS_NAME" in
-  Darwin) PLATFORM="macos" ;;
-  Linux) PLATFORM="linux" ;;
+  Darwin)
+    PLATFORM="macos"
+    case "$MACHINE" in
+      arm64|aarch64) ARCH="arm64" ;;
+      *) printf 'FLUX currently publishes macOS ARM64 (Apple Silicon) releases only; detected %s.\n' "$MACHINE" >&2; exit 1 ;;
+    esac
+    ;;
+  Linux)
+    PLATFORM="linux"
+    case "$MACHINE" in
+      x86_64|amd64) ARCH="x64" ;;
+      *) printf 'FLUX currently publishes Linux x64 releases only; detected %s.\n' "$MACHINE" >&2; exit 1 ;;
+    esac
+    ;;
   *) printf 'FLUX installer does not support this operating system: %s\n' "$OS_NAME" >&2; exit 1 ;;
-esac
-case "$MACHINE" in
-  x86_64|amd64) ARCH="x64" ;;
-  arm64|aarch64) ARCH="arm64" ;;
-  *) printf 'FLUX installer does not support this architecture: %s\n' "$MACHINE" >&2; exit 1 ;;
 esac
 
 if ! command -v bun >/dev/null 2>&1 || ! bun -e \

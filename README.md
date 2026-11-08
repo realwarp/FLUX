@@ -49,7 +49,7 @@ No application screenshot is included yet. A captured Windows Terminal screensho
 
 ## Platforms
 
-Windows x64 is the first release target. macOS and Linux packages are produced only by release jobs that pass their platform checks; those checks have not yet been run for this candidate. Do not treat either platform as supported until those results are recorded.
+The current release matrix targets Windows x64, Linux x64, and macOS ARM64 (Apple Silicon). Intel macOS and Linux ARM64 are not packaged by this workflow, and the Unix installer rejects those architectures rather than downloading a nonexistent asset. These are early-access builds; check the Actions results for the exact commit before installing.
 
 ## Troubleshooting and uninstall
 
