@@ -4,6 +4,8 @@
 
 A terminal coding assistant for exploring and changing a project with an AI model you choose.
 
+**Live website:** [warpie.link/flux](https://warpie.link/flux)
+
 ## Install
 
 **Windows PowerShell**
@@ -43,9 +45,13 @@ Session contents are stored locally and are not encrypted. Do not include passwo
 
 See [Safety](docs/SAFETY.md) for the actual boundaries and limitations.
 
-## Screenshots
+## Screenshot
 
-No application screenshot is included yet. A captured Windows Terminal screenshot is still required before release.
+The FLUX terminal home screen:
+
+![FLUX terminal home screen](website/assets/flux-home.png)
+
+The [live website](https://warpie.link/flux) includes the product overview and interface showcase.
 
 ## Platforms
 
