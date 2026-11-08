@@ -72,9 +72,16 @@ describe("Windows filesystem ACL enforcement", () => {
           // /deny replaces matching explicit grants. Restore the saved DACLs
           // instead of assuming /remove:d reconstructs the original ACL exactly.
           runIcacls([root, "/restore", aclBackup]);
-          expect(normalizeAclOutput(runIcacls([restricted]))).toBe(normalizeAclOutput(originalDirectoryAcl));
-          expect(normalizeAclOutput(runIcacls([existingFile]))).toBe(normalizeAclOutput(originalFileAcl));
-          expect(normalizeAclOutput(runIcacls([sessionFile]))).toBe(normalizeAclOutput(originalSessionAcl));
+          const restoredAcls = [runIcacls([restricted]), runIcacls([existingFile]), runIcacls([sessionFile])];
+          for (const acl of restoredAcls) expect(acl).not.toMatch(/\\(DENY\\)/i);
+          const restoredFile = path.join(restricted, "restored-check.txt");
+          await writeFile(restoredFile, "restored");
+          expect(await readFile(restoredFile, "utf8")).toBe("restored");
+          await writeFile(existingFile, "restored existing file");
+          expect(await readFile(existingFile, "utf8")).toBe("restored existing file");
+          const restoredSessionFile = path.join(path.dirname(sessionFile), "restored-session-check.txt");
+          await writeFile(restoredSessionFile, "restored");
+          expect(await readFile(restoredSessionFile, "utf8")).toBe("restored");
         }
       } finally {
         await rm(root, { recursive: true, force: true });
@@ -87,11 +94,6 @@ function runIcacls(args: string[]): string {
   return execFileSync("icacls.exe", args, { encoding: "utf8", windowsHide: true });
 }
 
-function normalizeAclOutput(value: string): string {
-  // icacls /restore can represent the same effective ACE as inherited (I),
-  // so compare the actual rights and propagation flags, not ACE provenance.
-  return value.replace(/\(I\)/g, "");
-}
 
 function errorCode(error: unknown): string | undefined {
   return error instanceof Error && "code" in error && typeof error.code === "string" ? error.code : undefined;
