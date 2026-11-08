@@ -73,7 +73,7 @@ describe("Windows filesystem ACL enforcement", () => {
           // instead of assuming /remove:d reconstructs the original ACL exactly.
           runIcacls([root, "/restore", aclBackup]);
           const restoredAcls = [runIcacls([restricted]), runIcacls([existingFile]), runIcacls([sessionFile])];
-          for (const acl of restoredAcls) expect(acl).not.toMatch(/\\(DENY\\)/i);
+          for (const acl of restoredAcls) expect(acl).not.toMatch(/\(DENY\)/i);
           const restoredFile = path.join(restricted, "restored-check.txt");
           await writeFile(restoredFile, "restored");
           expect(await readFile(restoredFile, "utf8")).toBe("restored");
