@@ -131,7 +131,7 @@ denied.
 | `flux providers` | `list`, `add`, `test`, `enable`, `disable`, `remove`, `models`, `default`. |
 | `flux models` | `list`, `use <p> <m>`, `role <role> <p> <m>`, `fallback …`. |
 | `flux usage [--json]` | Token/request usage and budget status. |
-| `flux sessions` | `list`, `show <id>`, `delete <id>`. |
+| `flux sessions` | `list`, `search <text>`, `show <id>`, `delete <id>`. |
 | `flux --version`, `flux --help` | Version and help. |
 
 Common flags: `--session <id>`, `--yes`, `--read-only`, `--accept-edits`,
@@ -148,6 +148,11 @@ records only what the endpoint demonstrates; capabilities are never inferred
 from a model name.
 
 ```sh
+
+Inside the TUI, `Ctrl+P` opens the command palette. `Ctrl+Enter` submits the
+multiline composer, `Ctrl+N` creates a session, and `Ctrl+L` reloads the
+current session. Assistant headings, lists and fenced code blocks remain
+structured in the conversation view.sh
 flux providers list
 flux providers test ollama
 flux providers disable openrouter        # keep the profile, stop routing to it

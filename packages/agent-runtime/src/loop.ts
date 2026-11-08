@@ -151,6 +151,7 @@ export async function runAgent(deps: AgentRunnerDeps, input: AgentRunInput): Pro
       const calls: ToolCall[] = [];
       let reportedUsage: TokenUsage | undefined;
       const activeTarget = deps.router.resolve(input.role);
+      let usageTarget = activeTarget;
       const fallbacks = deps.router.fallbackChain(input.role);
 
       try {
@@ -183,6 +184,7 @@ export async function runAgent(deps: AgentRunnerDeps, input: AgentRunInput): Pro
           }
           if (routed.type === "provider-start") continue;
           const event = routed.event;
+          usageTarget = routed.target;
           if (event.type === "text-delta") {
             text += event.text;
             deps.emit({ type: "text", agentId, text: event.text });
@@ -204,12 +206,11 @@ export async function runAgent(deps: AgentRunnerDeps, input: AgentRunInput): Pro
       }
 
       lastText = text;
-      const activeForUsage = activeTarget;
       recordUsage(deps, {
         sessionId: input.sessionId,
         taskId: input.taskId,
         agentId,
-        target: activeForUsage,
+        target: usageTarget,
         messages,
         outputText: text + reasoning,
         reported: reportedUsage,

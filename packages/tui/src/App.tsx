@@ -6,6 +6,7 @@ import type { ApprovalRequest, ApprovalDecision } from "@flux/permissions";
 import { formatTokens, type AgentRole } from "@flux/shared";
 import type { SessionRow } from "@flux/persistence";
 import { UiApprovalHandler } from "./approvals.ts";
+import { RichText } from "./RichText.tsx";
 
 const THEME = {
   bg: "#0b0e14",
@@ -98,6 +99,8 @@ export function App({ app, approvals, initialSessionId, onExit }: AppProps) {
   const [pending, setPending] = useState<ApprovalRequest | undefined>(undefined);
   const [running, setRunning] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showPalette, setShowPalette] = useState(false);
+  const [paletteQuery, setPaletteQuery] = useState("");
   const [focus, setFocus] = useState<"composer" | "sidebar">("composer");
   const [notice, setNotice] = useState<string>("");
   const [fallbackOn, setFallbackOn] = useState(
@@ -265,12 +268,35 @@ export function App({ app, approvals, initialSessionId, onExit }: AppProps) {
       else if (key.name === "n" || key.name === "escape") decide("rejected");
       return;
     }
+    if (showPalette) {
+      if (key.name === "escape") {
+        setShowPalette(false);
+        setPaletteQuery("");
+        return;
+      }
+      if (key.name === "backspace") {
+        setPaletteQuery((value) => value.slice(0, -1));
+        return;
+      }
+      if (!key.ctrl && !key.meta && key.name.length === 1 && key.name.trim()) {
+        setPaletteQuery((value) => value + key.name);
+        return;
+      }
+      return;
+    }
     if (key.name === "f1") {
       setShowHelp((value) => !value);
       return;
     }
+    if (key.ctrl && key.name === "p") {
+      setShowPalette((value) => !value);
+      setPaletteQuery("");
+      setShowHelp(false);
+      return;
+    }
     if (key.name === "escape") {
       setShowHelp(false);
+      setShowPalette(false);
       return;
     }
     if (key.name === "tab") {
@@ -392,10 +418,14 @@ export function App({ app, approvals, initialSessionId, onExit }: AppProps) {
               ) : null}
               {entries.map((entry) => (
                 <box key={entry.id} style={{ flexDirection: "column", marginBottom: 0 }}>
-                  <text fg={entryColor(entry.role)}>
-                    {entry.role === "assistant" || entry.role === "reasoning" ? "" : `${ROLE_LABEL[entry.role]} `}
-                    {entry.text || (entry.role === "assistant" && running ? "…" : "")}
-                  </text>
+                  {entry.role === "assistant" || entry.role === "reasoning" ? null : (
+                    <text fg={entryColor(entry.role)}>{`${ROLE_LABEL[entry.role]} `}</text>
+                  )}
+                  <RichText
+                    text={entry.text || (entry.role === "assistant" && running ? "…" : "")}
+                    color={entryColor(entry.role)}
+                    codeColor={THEME.violet}
+                  />
                 </box>
               ))}
             </scrollbox>
@@ -499,6 +529,39 @@ export function App({ app, approvals, initialSessionId, onExit }: AppProps) {
 
       {showHelp ? (
         <HelpOverlay onClose={() => setShowHelp(false)} modelLabel={modelLabel} width={width} height={height} />
+      ) : null}
+      {showPalette ? (
+        <CommandPalette
+          width={width}
+          height={height}
+          query={paletteQuery}
+          sessions={app.searchSessions(paletteQuery, 8)}
+          onClose={() => setShowPalette(false)}
+          onSession={(id) => {
+            loadSession(id);
+            setShowPalette(false);
+            setPaletteQuery("");
+          }}
+          onNewSession={() => {
+            const session = app.createSession();
+            setSessions(app.listSessions(20));
+            loadSession(session.id);
+            setShowPalette(false);
+          }}
+          onReload={() => {
+            loadSession(sessionId);
+            setShowPalette(false);
+          }}
+          onUsage={() => {
+            const status = app.sessionBudget(sessionId);
+            append(newEntry("notice", `usage: ${formatTokens(status.used.sessionTokens)} tokens, ${status.used.sessionRequests} requests — ${status.message}`));
+            setShowPalette(false);
+          }}
+          onToggleFallback={() => {
+            setFallbackOn((value) => !value);
+            setShowPalette(false);
+          }}
+        />
       ) : null}
     </box>
   );
@@ -634,7 +697,8 @@ function HelpOverlay({
     "Ctrl+C      cancel / quit      Ctrl+N     new session",
     "Ctrl+U      show usage         Ctrl+L     reload current session",
     "Ctrl+F      toggle fallback for this session",
-    "F1 / Esc    help              Mouse      click sessions, buttons, dialogs",
+    "Ctrl+P      command palette   F1 / Esc    help",
+    "Mouse       click sessions, buttons, dialogs",
     "",
     `Active route: ${modelLabel}`,
     "",
@@ -670,6 +734,69 @@ function HelpOverlay({
         <text key={index} fg={index === 0 ? THEME.accent : THEME.text}>
           {line}
         </text>
+      ))}
+    </box>
+  );
+}
+
+function CommandPalette({
+  width,
+  height,
+  query,
+  sessions,
+  onClose,
+  onSession,
+  onNewSession,
+  onReload,
+  onUsage,
+  onToggleFallback,
+}: {
+  width: number;
+  height: number;
+  query: string;
+  sessions: SessionRow[];
+  onClose: () => void;
+  onSession: (id: string) => void;
+  onNewSession: () => void;
+  onReload: () => void;
+  onUsage: () => void;
+  onToggleFallback: () => void;
+}) {
+  const commands: Array<{ label: string; shortcut: string; action: () => void }> = [
+    { label: "New session", shortcut: "Ctrl+N", action: onNewSession },
+    { label: "Reload current session", shortcut: "Ctrl+L", action: onReload },
+    { label: "Show usage", shortcut: "Ctrl+U", action: onUsage },
+    { label: "Toggle fallback", shortcut: "Ctrl+F", action: onToggleFallback },
+    { label: "Close palette", shortcut: "Esc", action: onClose },
+  ].filter(({ label }) => !query || label.toLowerCase().includes(query.toLowerCase()));
+  const heightForPalette = Math.min(height - 2, commands.length + Math.min(8, sessions.length) + 7);
+  return (
+    <box
+      onMouseDown={onClose}
+      style={{
+        position: "absolute",
+        left: Math.max(1, Math.floor((width - Math.min(width - 2, 64)) / 2)),
+        top: Math.max(1, Math.floor(height / 4)),
+        width: Math.min(width - 2, 64),
+        height: heightForPalette,
+        border: true,
+        borderColor: THEME.accent,
+        backgroundColor: THEME.panel,
+        flexDirection: "column",
+        padding: 1,
+      }}
+    >
+      <text fg={THEME.accent}>Command palette {query ? `· ${query}` : "· type to search"}</text>
+      {commands.map((command) => (
+        <box key={command.label} onMouseDown={command.action}>
+          <text fg={THEME.text}>{command.label.padEnd(28)} {command.shortcut}</text>
+        </box>
+      ))}
+      {sessions.length > 0 ? <text fg={THEME.accent}>Sessions</text> : null}
+      {sessions.map((session) => (
+        <box key={session.id} onMouseDown={() => onSession(session.id)}>
+          <text fg={THEME.text}>{session.title.slice(0, 48)}</text>
+        </box>
       ))}
     </box>
   );

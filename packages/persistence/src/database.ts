@@ -264,6 +264,20 @@ export class FluxDatabase {
       .filter((session): session is SessionRow => Boolean(session));
   }
 
+  searchSessions(query: string, limit = 50): SessionRow[] {
+    const trimmed = query.trim();
+    if (!trimmed) return this.listSessions(limit);
+    return this.db
+      .query<{ id: string }, [string, string, number]>(
+        `SELECT id FROM sessions
+         WHERE title LIKE ? OR id LIKE ?
+         ORDER BY updated_at DESC LIMIT ?`,
+      )
+      .all(`%${trimmed}%`, `%${trimmed}%`, limit)
+      .map((row) => this.getSession(row.id))
+      .filter((session): session is SessionRow => Boolean(session));
+  }
+
   deleteSession(id: string): void {
     for (const table of ["messages", "tasks", "tool_calls", "approvals", "verifications", "usage_events", "agent_runs"]) {
       this.db.query(`DELETE FROM ${table} WHERE session_id = ?`).run(id);
