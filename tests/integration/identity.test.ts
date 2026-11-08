@@ -71,6 +71,11 @@ describe("FLUX identity boundary", () => {
     expect(prompt).toContain("Preserve Windows drive letters and backslashes exactly.");
     expect(prompt).toContain("write, patch, and shell require explicit user approval");
     expect(prompt).toContain("require explicit per-operation FLUX approval in interactive mode");
+    expect(prompt).toContain("perform the requested action with the matching FLUX tool in the current turn");
+    expect(prompt).toContain("invoking `write`, `patch`, or `shell` causes the application to display its approval dialog");
+    expect(prompt).toContain('A chat message such as "yes" is not an approval decision');
+    expect(prompt).toContain("test.txt");
+    expect(prompt).toContain("Wait for the actual tool result before saying an operation succeeded");
     expect(prompt).toContain("Do not treat greetings or identity questions as requests for a capability list.");
     expect(prompt).toContain("Do not add workspace, operating-system, model, tool, or capability details.");
     expect(prompt).toContain("Do not repeat a failed or denied tool call unless the user changes the request");
@@ -78,6 +83,22 @@ describe("FLUX identity boundary", () => {
     expect(prompt).not.toContain("C:/Users/Developer");
     expect(prompt).not.toMatch(/[A-Za-z]:[\\/][^\n]*node_modules[\\/]/i);
     expect(prompt).not.toContain("running inside pi");
+  });
+
+  test("directs workspace actions through tools and leaves approval to FLUX", () => {
+    const base = {
+      cwd: "C:\\Work\\FLUX",
+      platform: "win32" as NodeJS.Platform,
+      applicationSurface: "terminal TUI" as const,
+    };
+    const interactive = buildFluxSystemPrompt({ ...base, approvalMode: "interactive" });
+    expect(interactive).toContain("call the matching FLUX tool in the current turn");
+    expect(interactive).toContain("FLUX handles the approval interaction");
+    expect(interactive).toContain("A chat message such as \"yes\" is not an approval decision");
+
+    const unavailable = buildFluxSystemPrompt({ ...base, approvalMode: "unavailable" });
+    expect(unavailable).toContain("the tool returns a denial");
+    expect(unavailable).toContain("do not try to bypass it");
   });
 
   test("refreshes provider and model context from the active session", () => {
