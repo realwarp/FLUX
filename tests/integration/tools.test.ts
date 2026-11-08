@@ -57,7 +57,7 @@ describe("Pi custom workspace tool registry", () => {
   });
 
   test("describes patch content as a unified diff rather than complete file contents", () => {
-    const root = "C:\\workspace";
+    const root = path.join(os.tmpdir(), "flux-metadata-workspace");
     const patch = createFluxToolDefinitions(createWorkspace(root), new ApprovalPolicy())
       .find((tool) => tool.name === "patch");
     if (!patch) throw new Error("patch tool was not registered");

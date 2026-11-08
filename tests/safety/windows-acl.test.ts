@@ -19,6 +19,8 @@ describe("Windows filesystem ACL enforcement", () => {
     const records = new SessionStore("acl-session", restricted, restricted);
     await records.appendMessage({ role: "user", content: "persisted before ACL restriction" });
     const sessionFile = path.join(restricted, "sessions", "acl-session.json");
+    const aclBackup = path.join(root, "restricted-acl-backup.txt");
+    runIcacls([restricted, "/save", aclBackup, "/T"]);
     const identity = execFileSync("whoami.exe", ["/user", "/fo", "csv", "/nh"], { encoding: "utf8" });
     const sid = identity.match(/S-\d-(?:\d+-?)+/)?.[0];
     if (!sid) throw new Error("Could not determine the current Windows user SID.");
@@ -67,7 +69,9 @@ describe("Windows filesystem ACL enforcement", () => {
     } finally {
       try {
         if (restrictedAclApplied) {
-          runIcacls([restricted, "/remove:d", `*${sid}`, "/T"]);
+          // /deny replaces matching explicit grants. Restore the saved DACLs
+          // instead of assuming /remove:d reconstructs the original ACL exactly.
+          runIcacls([restricted, "/restore", aclBackup]);
           expect(runIcacls([restricted])).toBe(originalDirectoryAcl);
           expect(runIcacls([existingFile])).toBe(originalFileAcl);
           expect(runIcacls([sessionFile])).toBe(originalSessionAcl);

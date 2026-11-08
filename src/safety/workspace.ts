@@ -21,10 +21,15 @@ export class Workspace {
     if (typeof relativePath !== "string" || relativePath.length === 0) {
       throw new WorkspaceViolation("Path must be a non-empty string");
     }
-    const candidate = path.resolve(this.root, relativePath);
-    assertLexicallyContained(candidate, this.comparisonRoot);
+    // Resolve the workspace root through the filesystem before comparing it with
+    // resolved targets. This handles platform aliases such as macOS /var -> /private
+    // and Windows short/long path spellings without weakening symlink containment.
+    const canonicalRoot = await realpath(this.root);
+    const comparisonRoot = normalizeForComparison(canonicalRoot);
+    const candidate = path.resolve(canonicalRoot, relativePath);
+    assertLexicallyContained(candidate, comparisonRoot);
     const checked = await resolveExistingAncestor(candidate);
-    assertLexicallyContained(checked, this.comparisonRoot);
+    assertLexicallyContained(checked, comparisonRoot);
     if (options.mustExist) await access(candidate, constants.F_OK);
     return candidate;
   }
