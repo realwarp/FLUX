@@ -72,7 +72,7 @@ describe("FLUX identity boundary", () => {
     expect(prompt).toContain("write, patch, and shell require explicit user approval");
     expect(prompt).toContain("require explicit per-operation FLUX approval in interactive mode");
     expect(prompt).toContain("perform the requested action with the matching FLUX tool in the current turn");
-    expect(prompt).toContain("invoking `write`, `patch`, or `shell` causes the application to display its approval dialog");
+    expect(prompt).toContain("invoking 'write', 'patch', or 'shell' causes the application to display its approval dialog");
     expect(prompt).toContain('A chat message such as "yes" is not an approval decision');
     expect(prompt).toContain("test.txt");
     expect(prompt).toContain("Wait for the actual tool result before saying an operation succeeded");
