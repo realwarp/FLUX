@@ -1,0 +1,27 @@
+FLUX — Terminal-Native AI Coding Agent
+BharatCode Build League — Project Information
+
+PROJECT
+FLUX is a terminal-native AI coding agent for exploring and changing a software project with an AI model chosen by the developer. It provides workspace-aware file reading and search, approval-gated writes and patches, approval-gated shell commands, session persistence, model selection, and Git diff visibility.
+
+BHARATCODE API INTEGRATION
+The repository includes a dedicated "bharatcode" provider configuration. FLUX routes this provider through an OpenAI-compatible Chat Completions interface.
+
+For the current BharatCode API, configure the provider with these environment variables:
+
+  BHARATCODE_BASE_URL=https://bharatcode.ai/api/model/v1
+  BHARATCODE_MODEL=qwen-3.8-27b
+  BHARATCODE_API_KEY=<your BharatCode API key>
+  FLUX_PROVIDER=bharatcode
+  FLUX_MODEL=qwen-3.8-27b
+
+Keep the API key in your local environment. Never commit real API keys, access tokens, or other credentials.
+
+The provider integration is implemented in:
+  src/config/providers.ts
+  src/providers/router.ts
+
+A working inference request requires an eligible BharatCode account/API key and available model-serving capacity. The API may return temporary rate-limit or queue errors during busy periods.
+
+PROJECT REPOSITORY
+https://github.com/realwarp/FLUX
