@@ -72,9 +72,9 @@ describe("Windows filesystem ACL enforcement", () => {
           // /deny replaces matching explicit grants. Restore the saved DACLs
           // instead of assuming /remove:d reconstructs the original ACL exactly.
           runIcacls([root, "/restore", aclBackup]);
-          expect(normalizeAclOutput(runIcacls([restricted]))).toBe(normalizeAclOutput(originalDirectoryAcl);
-          expect(normalizeAclOutput(runIcacls([existingFile]))).toBe(normalizeAclOutput(originalFileAcl);
-          expect(normalizeAclOutput(runIcacls([sessionFile]))).toBe(normalizeAclOutput(originalSessionAcl);
+          expect(normalizeAclOutput(runIcacls([restricted]))).toBe(normalizeAclOutput(originalDirectoryAcl));
+          expect(normalizeAclOutput(runIcacls([existingFile]))).toBe(normalizeAclOutput(originalFileAcl));
+          expect(normalizeAclOutput(runIcacls([sessionFile]))).toBe(normalizeAclOutput(originalSessionAcl));
         }
       } finally {
         await rm(root, { recursive: true, force: true });
@@ -90,7 +90,7 @@ function runIcacls(args: string[]): string {
 function normalizeAclOutput(value: string): string {
   // icacls /restore can represent the same effective ACE as inherited (I),
   // so compare the actual rights and propagation flags, not ACE provenance.
-  return value.replace(/\\(I\\)/g, "");
+  return value.replace(/\(I\)/g, "");
 }
 
 function errorCode(error: unknown): string | undefined {
