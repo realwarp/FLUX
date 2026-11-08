@@ -1,18 +1,55 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
 build/
 coverage/
+
+# Logs and temporary files
 *.log
-.DS_Store
-Thumbs.db
+*.tmp
+
+# Archives and release artifacts
+*.zip
+*.tar.gz
+*.tgz
+release/
+.release/
+release-artifacts/
+
+# Bun and build caches
+.bun/
+.cache/
+.turbo/
+*.tsbuildinfo
+
+# Environment variables and secrets
 .env
 .env.*
 !.env.example
+.envrc
+.direnv/
+
+# Local FLUX data
 .flux/
 *.sqlite
 *.sqlite-*
 *.db
+
+# Other AI tool configurations
 .opencode/
 .herdr/
 .claude/
+
+# Reference repositories
 reference/
+
+# Editor settings
+.idea/
+.vscode/*.local.json
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini

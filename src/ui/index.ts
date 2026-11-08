@@ -1,5 +1,8 @@
 // Public terminal UI surface for FLUX integrations.
 
+import { renderFluxPixelLogo } from "./flux-logo.js"
+import { sanitizeUserFacingError } from "./ansi.js";
+
 export { applyInputKey, createInputState, renderComposer } from "./input.js"
 export {
   renderErrorNotice,
@@ -9,6 +12,7 @@ export {
   TerminalRenderer,
 } from "./renderer.js"
 export { defaultTheme, style } from "./theme.js"
+export { FluxPiApp, type FluxPiAppOptions } from "./pi-app.js"
 export type { UiTheme } from "./theme.js"
 import type { ToolStatus } from "./types.js"
 export type {
@@ -42,17 +46,19 @@ export interface StatusOptions {
   cwd: string
   model: string
   sessionId: string
-  sessionFile?: string
+  sessionPersisted: boolean
 }
 
 export function renderWelcome(options: WelcomeOptions): string {
   return [
-    "FLUX",
-    `project  ${options.cwd}`,
-    `model    ${options.model}`,
-    `session  ${options.sessionId}`,
+    ...renderFluxPixelLogo(31, 0, { color: false, ascii: true }),
+    `workspace  ${options.cwd}`,
+    `model      ${options.model}`,
+    `session    ${shortSessionId(options.sessionId)}`,
     "",
-    "Ask about the project, or type ? for help.",
+    "Explore, change, and verify this workspace.",
+    "Try: explain this project · find a bug · review recent changes",
+    "Type ? for help.",
   ].join("\n")
 }
 
@@ -70,14 +76,23 @@ export function renderToolEvent(event: ToolEvent): string {
 }
 
 export function renderError(message: string): string {
-  return `! ${message}`
+  return `! ${sanitizeUserFacingError(message)}`;
 }
 
 export function renderHelp(): string {
   return [
-    "FLUX commands",
+    "FLUX — Terminal-native AI Coding Agent",
+    "Usage: flux [setup] [--cwd=PATH] [--resume] [--prompt=TEXT] [--approve]",
+    "  setup           configure a provider or model",
+    "  --help, -h      show this help",
+    "  --version, -v   show the FLUX version",
+    "  --cwd=PATH      use a specific workspace",
+    "  --resume        continue the most recent workspace session",
+    "  --prompt=TEXT   send one prompt and exit",
+    "  --approve       automatically approve writes, patches, and shell commands",
+    "",
+    "Interactive commands",
     "  enter       send message",
-    "  ctrl+k      command palette",
     "  esc         interrupt or close",
     "  up/down     prompt history",
     "  /status     session and model status",
@@ -92,8 +107,12 @@ export function renderStatus(options: StatusOptions): string {
   return [
     `project  ${options.cwd}`,
     `model    ${options.model}`,
-    `session  ${options.sessionId}`,
-    ...(options.sessionFile ? [`file     ${options.sessionFile}`] : []),
+    `session  ${shortSessionId(options.sessionId)}`,
+    `persistence  ${options.sessionPersisted ? "saved" : "pending"}`,
   ].join("\n")
+}
+
+function shortSessionId(sessionId: string): string {
+  return sessionId.replace(/-/g, "").slice(0, 8)
 }
 

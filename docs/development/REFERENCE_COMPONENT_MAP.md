@@ -1,5 +1,7 @@
 # FLUX Reference Component Map
 
+> Developer audit of implementation references and their licensing boundaries.
+
 ## Pi — technical foundation
 
 **Repository:** `reference/pi`  

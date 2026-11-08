@@ -1,16 +1,25 @@
 {
   "name": "flux-coding-agent",
   "version": "0.1.0",
-  "description": "A Pi-based terminal coding agent.",
+  "description": "FLUX — Terminal-native AI Coding Agent.",
   "type": "module",
   "bin": {
     "flux": "dist/src/cli.js"
   },
+  "files": [
+    "dist/src/",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check": "tsc --noEmit -p tsconfig.json",
-    "test": "bun test tests/safety/tools.test.ts tests/providers/config.test.ts tests/persistence/session.test.ts",
-    "start": "bun run src/cli.ts"
+    "test": "bun test tests/safety/tools.test.ts tests/safety/windows-acl.test.ts tests/providers/config.test.ts tests/persistence/session.test.ts tests/integration/tools.test.ts tests/integration/identity.test.ts tests/integration/tui02.test.ts tests/integration/tui03.test.ts tests/integration/tui04.test.ts",
+    "test:live": "bun run tests/live/runtime-context.ts",
+    "test:live:switch": "bun run tests/live/model-switch.ts",
+    "start": "bun run src/cli.ts",
+    "prepare": "bun run build"
   },
   "engines": {
     "node": ">=22.19.0"

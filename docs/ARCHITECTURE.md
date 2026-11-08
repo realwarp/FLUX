@@ -1,27 +1,28 @@
 # FLUX Architecture
 
-## Foundation decision
+## Foundation
 
-Pi is the proposed and validated foundation. Its MIT-licensed packages expose the exact layers FLUX needs: `@earendil-works/pi-ai` for provider/model streaming, `@earendil-works/pi-agent-core` for the agent loop, `@earendil-works/pi-coding-agent` for sessions and coding tools, and `@earendil-works/pi-tui` for terminal rendering. The packages are published at version 1.5.0, use Node 22.19 or newer, and document native Windows support.
-
-This is preferable to rebuilding equivalent runtime behavior because Pi already provides tool definitions, model restoration, session management, streaming events, and Windows shell handling. FLUX owns the product boundary around it: configuration, approval policy, workspace containment, verification records, and the terminal experience. OpenCode and Crush are references for selective behavior and presentation, not runtime dependencies.
+FLUX uses the published MIT-licensed Pi packages for model streaming, the agent loop, sessions, and terminal UI. FLUX owns provider configuration, workspace containment, approval decisions, local approval/verification records, and its visual identity. OpenCode informed selected workflows; Crush informed visual hierarchy only. Neither is a runtime dependency, and no Crush implementation code is included.
 
 ## Runtime shape
 
 ```text
-flux CLI
-  -> config/provider selection
-  -> Pi AgentSession + Pi SessionManager
-  -> FLUX approval and workspace policy
-  -> Pi coding tools (read/search/write/edit/shell)
-  -> persisted session and verification evidence
+flux CLI / terminal UI
+  -> user configuration and provider readiness
+  -> Pi AgentSession and SessionManager
+  -> FLUX workspace, validation, and approval policy
+  -> FLUX read/search/write/patch/shell tools
+  -> local conversation, approval, and verification records
 ```
 
-The CLI is intentionally conversation-first. It runs from the selected workspace, streams model events, exposes explicit commands for session status and verification, and keeps mutation tools behind the FLUX approval policy.
+The application uses the process working directory as the workspace unless `--cwd` selects another path. The provider and model are selected from FLUX configuration; a missing configured model is not silently replaced.
 
-## Compatibility constraints
+## Distribution
 
-- Runtime dependencies are published packages; the reference repositories are build-time inputs only.
-- Node 22.19+ and Bun 1.4+ are supported for development; the generated CLI is installed with `bun add -g .`.
-- Native TUI features are optional at the first release boundary so a Windows installation does not require compiling unrelated native code.
-- No legacy/v1.1 source or databases are read or migrated.
+The release artifact contains compiled `dist/`, the package manifest, and the Bun lockfile. The installer verifies the release SHA-256 checksum, installs Bun only after consent, and installs locked runtime dependencies with lifecycle scripts disabled. It does not clone the repository or run the build during installation.
+
+The launchers require Bun 1.4.4 or newer. The package metadata also declares Node.js 22.19 or newer for Node-based package-manager use. Platform support is limited to release targets whose automated checks pass; see the root README and release workflow.
+
+## Data and compatibility
+
+Configuration, conversation sessions, and FLUX approval/verification records are stored in the user's profile. They are not encrypted. FLUX does not migrate the legacy v1.1 databases or source tree.

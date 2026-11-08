@@ -1,6 +1,6 @@
 // Compact responsive renderer for FLUX's conversation-first terminal shell.
 
-import { truncate, wrapText } from "./ansi.js"
+import { sanitizeUserFacingError, truncate, wrapText } from "./ansi.js"
 import { defaultTheme, style, type UiTheme } from "./theme.js"
 import type { ConversationMessage, ErrorNotice, ModelStatus, ProjectStatus, RenderOptions, TerminalSize, ToolCard, UiSnapshot } from "./types.js"
 
@@ -27,25 +27,38 @@ export class TerminalRenderer {
   }
 
   private renderHeader(project: ProjectStatus | undefined, model: ModelStatus | undefined, width: number): string[] {
-    const name = project?.name ?? "FLUX"
-    const path = project?.path ? ` ${truncate(project.path, Math.max(8, width - name.length - 12))}` : ""
+    const name = project?.name ?? "workspace"
+    const path = project?.path ? ` ${truncate(project.path, Math.max(8, width - name.length - 18))}` : ""
     const branch = project?.branch ? `  ${project.branch}${project.dirty ? "*" : ""}` : ""
     const modelText = model ? `${model.provider}/${model.model}` : "model not configured"
     const connection = model?.connected === false ? "offline" : model ? "ready" : "waiting"
     const status = `${connection} · ${modelText}`
-    if (width < 56) return [style(` ${name}${branch}`, this.theme.accent, this.options.color), style(` ${truncate(status, width - 2)}`, this.theme.muted, this.options.color), ""]
+    const brand = style(" FLUX", this.theme.accent, this.options.color)
+    if (width < 56) {
+      return [
+        `${brand}${style(` · ${truncate(name, Math.max(8, width - 12))}${branch}`, this.theme.warning, this.options.color)}`,
+        style(` ${truncate(status, width - 2)}`, this.theme.muted, this.options.color),
+        "",
+      ]
+    }
     return [
-      style(` ${name}`, this.theme.accent, this.options.color) + style(path, this.theme.muted, this.options.color) + style(branch, this.theme.warning, this.options.color),
+      `${brand}${style(` · ${name}`, this.theme.user, this.options.color)}${style(path, this.theme.muted, this.options.color)}${style(branch, this.theme.warning, this.options.color)}`,
       style(` ${truncate(status, width - 2)}`, this.theme.muted, this.options.color),
       "",
     ]
   }
 
   private renderConversation(messages: readonly ConversationMessage[], width: number): string[] {
-    if (messages.length === 0) return [style(" No messages yet. Ask FLUX to inspect the project.", this.theme.muted, this.options.color), ""]
+    if (messages.length === 0) {
+      return [
+        style(" No messages yet. Ask FLUX to explore this workspace.", this.theme.muted, this.options.color),
+        style(" Try: explain the architecture · review the current changes", this.theme.muted, this.options.color),
+        "",
+      ]
+    }
     const compact = this.options.compact || width < 72
     return messages.flatMap((message) => {
-      const label = message.role === "user" ? "you" : message.role === "assistant" ? "flux" : "info"
+      const label = message.role === "user" ? "› YOU" : message.role === "assistant" ? "◆ FLUX" : "! NOTICE"
       const color = message.role === "user" ? this.theme.user : message.role === "assistant" ? this.theme.assistant : this.theme.muted
       const prefix = `${label} `
       const contentWidth = Math.max(8, width - (compact ? prefix.length + 2 : prefix.length + 4))
@@ -71,11 +84,11 @@ export class TerminalRenderer {
 
   private renderErrorNotice(error: ErrorNotice | undefined, width: number): string[] {
     if (!error) return []
-    const lines = wrapText(error.message, Math.max(8, width - 4))
+    const lines = wrapText(sanitizeUserFacingError(error.message), Math.max(8, width - 4))
     return [
       style(` ! ${lines[0] ?? ""}`, this.theme.error, this.options.color),
       ...lines.slice(1).map((line) => style(`   ${line}`, this.theme.error, this.options.color)),
-      ...(error.detail && width >= 64 ? [style(`   ${truncate(error.detail, width - 4)}`, this.theme.muted, this.options.color)] : []),
+      ...(error.detail && width >= 64 ? [style(`   ${truncate(sanitizeUserFacingError(error.detail), width - 4)}`, this.theme.muted, this.options.color)] : []),
       "",
     ]
   }

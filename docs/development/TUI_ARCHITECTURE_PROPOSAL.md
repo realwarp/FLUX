@@ -1,5 +1,7 @@
 # FLUX TUI Architecture Proposal
 
+> Historical proposal. The implemented structure differs in places; consult `../ARCHITECTURE.md` for the current overview.
+
 ## Foundation
 
 Use `@earendil-works/pi-tui` 1.5.0 as the only terminal framework:

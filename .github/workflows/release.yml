@@ -1,0 +1,123 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-package:
+    name: Verify (${{ matrix.target }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: windows-x64
+            runner: windows-latest
+          - target: linux-x64
+            runner: ubuntu-latest
+          - target: macos
+            runner: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Type-check
+        run: bun run check
+      - name: Build
+        run: bun run build
+      - name: Test
+        run: bun run test
+      - name: Verify release tag matches package version
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: bun -e 'const pkg = await Bun.file("package.json").json(); const stableTag = `v${pkg.version}`; const tag = process.env.RELEASE_TAG; const valid = tag === stableTag || (/^v\d+\.\d+\.\d+-rc\.\d+$/.test(tag ?? "") && tag.startsWith(`${stableTag}-rc.`)); if (!valid) throw new Error(`Tag ${tag} does not match package version ${pkg.version}`)'
+      - name: Package Windows x64 release
+        if: startsWith(github.ref, 'refs/tags/') && matrix.target == 'windows-x64'
+        shell: pwsh
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $asset = "flux-$tag-windows-x64.zip"
+          $root = Join-Path $env:RUNNER_TEMP "flux-release"
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          Copy-Item dist, package.json, bun.lock, README.md, LICENSE, THIRD_PARTY_NOTICES.md -Destination $root -Recurse
+          Compress-Archive -Path (Join-Path $root "*") -DestinationPath (Join-Path $env:RUNNER_TEMP $asset)
+          "asset=$asset" >> $env:GITHUB_OUTPUT
+        id: package-windows
+      - name: Package macOS/Linux release
+        if: startsWith(github.ref, 'refs/tags/') && matrix.target != 'windows-x64'
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="$GITHUB_REF_NAME"
+          case "$(uname -m)" in
+            x86_64|amd64) arch=x64 ;;
+            arm64|aarch64) arch=arm64 ;;
+            *) echo "Unsupported release architecture: $(uname -m)" >&2; exit 1 ;;
+          esac
+          if [ "${{ matrix.target }}" = "linux-x64" ] && [ "$arch" != "x64" ]; then
+            echo "Linux release runner must be x64, got $arch" >&2
+            exit 1
+          fi
+          platform="${{ matrix.target }}"
+          platform="${platform%-*}"
+          asset="flux-${tag}-${platform}-${arch}.tar.gz"
+          root="$RUNNER_TEMP/flux-release"
+          mkdir -p "$root"
+          cp -R dist package.json bun.lock README.md LICENSE THIRD_PARTY_NOTICES.md "$root/"
+          tar -czf "$RUNNER_TEMP/$asset" -C "$root" .
+          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+        id: package-unix
+      - name: Upload Windows release package
+        if: startsWith(github.ref, 'refs/tags/') && matrix.target == 'windows-x64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.target }}
+          path: ${{ runner.temp }}\${{ steps.package-windows.outputs.asset }}
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload macOS/Linux release package
+        if: startsWith(github.ref, 'refs/tags/') && matrix.target != 'windows-x64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.target }}
+          path: ${{ runner.temp }}/${{ steps.package-unix.outputs.asset }}
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: verify-and-package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: release-assets
+          merge-multiple: true
+      - name: Create checksums and publish assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd release-assets
+          sha256sum flux-* > SHA256SUMS.txt
+          prerelease=()
+          case "$GITHUB_REF_NAME" in
+            *-rc.*) prerelease=(--prerelease) ;;
+          esac
+          gh release create "$GITHUB_REF_NAME" flux-* SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "FLUX $GITHUB_REF_NAME" \
+            "${prerelease[@]}" \
+            --generate-notes

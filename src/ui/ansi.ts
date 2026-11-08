@@ -1,48 +1,35 @@
-// Small, dependency-free ANSI and terminal-width helpers.
+// Pi-aware terminal width helpers for ANSI styling and Unicode text.
 
-const ansiPattern = /\u001b\[[0-?]*[ -/]*[@-~]/g
+import { truncateToWidth, visibleWidth as piVisibleWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 
 export function visibleWidth(value: string): number {
-  return value.replace(ansiPattern, "").length
+  return piVisibleWidth(value);
 }
 
 export function truncate(value: string, width: number): string {
-  if (width <= 0) return ""
-  if (visibleWidth(value) <= width) return value
-  if (width === 1) return "…"
-  return `${value.slice(0, width - 1)}…`
+  if (width <= 0) return "";
+  return truncateToWidth(value, width, width === 1 ? "…" : "…");
 }
 
 export function wrapText(value: string, width: number): string[] {
-  if (width <= 0) return [""]
-  return value.split(/\r?\n/).flatMap((line) => {
-    if (!line) return [""]
-    const words = line.split(/\s+/)
-    const lines: string[] = []
-    let current = ""
-    words.forEach((word) => {
-      if (word.length > width) {
-        if (current) lines.push(current)
-        current = ""
-        for (let index = 0; index < word.length; index += width) {
-          lines.push(word.slice(index, index + width))
-        }
-        return
-      }
-      const next = current ? `${current} ${word}` : word
-      if (next.length > width) {
-        lines.push(current)
-        current = word
-        return
-      }
-      current = next
-    })
-    if (current || lines.length === 0) lines.push(current)
-    return lines
-  })
+  if (width <= 0) return [""];
+  return value.split(/\r?\n/).flatMap((line) => line ? wrapTextWithAnsi(line, width) : [""]);
 }
 
 export function pad(value: string, width: number): string {
-  return `${value}${" ".repeat(Math.max(0, width - visibleWidth(value)))}`
+  return `${value}${" ".repeat(Math.max(0, width - visibleWidth(value)))}`;
 }
 
+export function sanitizeUserFacingError(value: string): string {
+  return value
+    .replace(
+      /(?:[A-Za-z]:[\\/]|\/)[^\r\n"'`()]*?node_modules[\\/][^\r\n"'`()\s]*/gi,
+      "[internal dependency path]",
+    )
+    .replace(
+      /(?:[A-Za-z]:[\\/]|\/)[^\r\n"'`()]*?\.pi[\\/]agent[\\/][^\r\n"'`()\s]*/gi,
+      "[internal session path]",
+    )
+    .replace(/@earendil-works\/pi-[\w-]+/gi, "FLUX runtime")
+    .replace(/\bPi (?:Coding Agent|SDK|runtime)\b/gi, "FLUX runtime");
+}

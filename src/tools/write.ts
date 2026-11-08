@@ -8,7 +8,12 @@ import { Workspace } from "../safety/workspace.js";
 export async function writeTool(workspace: Workspace, policy: ApprovalPolicy, input: unknown): Promise<void> {
   const args = validateWriteArguments(input);
   const file = await workspace.resolve(args.path);
-  await policy.require({ operation: "write", description: `Write ${args.path}`, path: file });
+  await policy.require({
+    operation: "write",
+    description: `Write ${args.path} (${args.content.length} bytes)`,
+    path: file,
+    preview: args.content,
+  });
   await mkdir(path.dirname(file), { recursive: true });
   await writeFile(file, args.content, "utf8");
 }

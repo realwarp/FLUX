@@ -67,23 +67,32 @@ export class SessionStore {
   }
 
   async appendMessage(message: Omit<SessionMessage, "id" | "createdAt">): Promise<SessionMessage> {
-    const record = await this.store.read();
     const saved = { ...message, id: randomUUID(), createdAt: new Date().toISOString() };
-    await this.store.write({ ...record, updatedAt: saved.createdAt, messages: [...record.messages, saved] });
+    await this.store.update((record) => ({
+      ...record,
+      updatedAt: saved.createdAt,
+      messages: [...record.messages, saved],
+    }));
     return saved;
   }
 
   async recordApproval(input: Omit<ApprovalRecord, "id" | "createdAt">): Promise<ApprovalRecord> {
-    const record = await this.store.read();
     const saved = { ...input, id: randomUUID(), createdAt: new Date().toISOString() };
-    await this.store.write({ ...record, updatedAt: saved.createdAt, approvals: [...record.approvals, saved] });
+    await this.store.update((record) => ({
+      ...record,
+      updatedAt: saved.createdAt,
+      approvals: [...record.approvals, saved],
+    }));
     return saved;
   }
 
   async recordVerification(input: Omit<VerificationRecord, "id" | "createdAt">): Promise<VerificationRecord> {
-    const record = await this.store.read();
     const saved = { ...input, id: randomUUID(), createdAt: new Date().toISOString() };
-    await this.store.write({ ...record, updatedAt: saved.createdAt, verifications: [...record.verifications, saved] });
+    await this.store.update((record) => ({
+      ...record,
+      updatedAt: saved.createdAt,
+      verifications: [...record.verifications, saved],
+    }));
     return saved;
   }
 }

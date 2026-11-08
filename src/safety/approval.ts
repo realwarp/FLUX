@@ -7,6 +7,7 @@ export interface ApprovalRequest {
   readonly description: string;
   readonly path?: string;
   readonly command?: string;
+  readonly preview?: string;
 }
 
 export interface ApprovalPolicyOptions {
@@ -41,7 +42,7 @@ export class ApprovalPolicy {
         : this.options.allowWrites;
     if (automatic) return;
     if (this.options.approve && await this.options.approve(request)) return;
-    throw new ApprovalDenied(`Approval required for ${request.operation}`);
+    throw new ApprovalDenied(`FLUX denied approval for ${request.operation}; the operation was not executed.`);
   }
 }
 
