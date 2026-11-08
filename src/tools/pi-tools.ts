@@ -74,8 +74,8 @@ export function createFluxToolDefinitions(workspace: Workspace, policy: Approval
     defineTool({
       name: "write",
       label: "Write",
-      description: "Write a complete workspace file after explicit approval.",
-      promptSnippet: "Write approved workspace files",
+      description: "Create or replace a complete workspace file. Call this tool for user-requested file creation or full-file replacement; FLUX handles approval before execution.",
+      promptSnippet: "Create or replace workspace files with the write tool; FLUX handles approval.",
       parameters: writeParameters,
       executionMode: "sequential",
       execute: async (_toolCallId, params) => {
@@ -86,8 +86,8 @@ export function createFluxToolDefinitions(workspace: Workspace, policy: Approval
     defineTool({
       name: "patch",
       label: "Patch",
-      description: "Apply a unified diff with matching hunk context to one workspace file after explicit approval.",
-      promptSnippet: "Apply unified diff patches to approved workspace files",
+      description: "Apply a unified diff with matching hunk context to one workspace file. Call this tool for targeted user-requested edits; FLUX handles approval before execution.",
+      promptSnippet: "Apply targeted workspace edits with the patch tool; FLUX handles approval.",
       parameters: patchParameters,
       executionMode: "sequential",
       execute: async (_toolCallId, params) => {
