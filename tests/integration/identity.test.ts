@@ -92,7 +92,7 @@ describe("FLUX identity boundary", () => {
       applicationSurface: "terminal TUI" as const,
     };
     const interactive = buildFluxSystemPrompt({ ...base, approvalMode: "interactive" });
-    expect(interactive).toContain("call the matching FLUX tool in the current turn");
+    expect(interactive).toContain("perform the requested action with the matching FLUX tool in the current turn");
     expect(interactive).toContain("FLUX handles the approval interaction");
     expect(interactive).toContain("A chat message such as \"yes\" is not an approval decision");
 
